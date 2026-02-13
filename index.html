@@ -228,13 +228,16 @@ function createNodeCard(nodeId) {
     `;
     container.appendChild(card);
 }
+// --- CONFIGURATION ---
 const AIO_USER = "arispaparis";
-const AIO_KEY = "aio_hzNN26SDCwNrCCubzr1E9xWl7R5q"; 
-const FEED_KEY = "all_data"; 
+const AIO_KEY = "YOUR_NEW_REGENERATED_KEY"; 
+const FEED_KEY = "all_data"; // Double check if this is "all_data" or "all-data" in Adafruit!
 
 async function fetchNodeData() {
     const statusEl = document.getElementById('connection-status');
-    // Note the /data/last at the end
+    if (statusEl) statusEl.style.backgroundColor = '#3b82f6'; // Blue while loading
+    
+    // We append /data/last to get the most recent entry
     const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}/data/last`;
 
     try {
@@ -242,25 +245,22 @@ async function fetchNodeData() {
             headers: { 'X-AIO-Key': AIO_KEY }
         });
 
-        if (!response.ok) {
-            console.error("HTTP Error:", response.status);
-            throw new Error('Cloud Access Denied');
-        }
-
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
         const result = await response.json();
         
-        // IMPORTANT: Adafruit uses "value" for the payload in the /data/last endpoint
+        // result.value contains the stringified JSON from your ESP32
         if (!result.value) {
-            console.error("No data found in feed");
+            console.error("Feed is empty");
             return;
         }
 
         const data = JSON.parse(result.value);
-        console.log("Success! Decoded Data:", data);
-
-        // ... rest of your UI update logic ...
-
-        // --- 1. UPDATE MASTER SENSORS ---
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        console.log('Cloud Data:', data);
+        
+        // 1. Update Master Sensors
         if (data.inside !== undefined) {
             document.getElementById('master-temp').textContent = parseFloat(data.inside).toFixed(1);
         }
@@ -277,46 +277,40 @@ async function fetchNodeData() {
         }
         document.getElementById('master-updated').textContent = 'Cloud Sync: ' + now;
 
-        // --- 2. UPDATE BLE NODES ---
-        if (data.nodes && data.nodes.length > 0) { 
+        // 2. Update BLE Nodes
+        if (data.nodes && data.nodes.length > 0) {
             data.nodes.forEach(node => {
-                const rawId = node.id; 
-                // Check if card exists, if not, create it
-                if (!renderedNodes[rawId]) { 
-                    createNodeCard(rawId); 
-                    renderedNodes[rawId] = true; 
+                const rawId = node.id;
+                if (!renderedNodes[rawId]) {
+                    createNodeCard(rawId);
+                    renderedNodes[rawId] = true;
                 }
 
-                // Update Temp
                 if (node.temp !== undefined) {
                     document.getElementById(`node-${rawId}-temp`).textContent = parseFloat(node.temp).toFixed(1);
                 }
 
-                // Update Humidity & Bar
                 if (node.humidity !== undefined) {
                     const nh = parseFloat(node.humidity);
-                    const humEl = document.getElementById(`node-${rawId}-humidity`);
-                    const humBarEl = document.getElementById(`node-${rawId}-humidity-bar`);
-                    if (humEl) humEl.textContent = nh.toFixed(0);
-                    if (humBarEl) humBarEl.style.width = Math.min(Math.max(nh, 0), 100) + '%';
+                    const hEl = document.getElementById(`node-${rawId}-humidity`);
+                    const hBar = document.getElementById(`node-${rawId}-humidity-bar`);
+                    if (hEl) hEl.textContent = nh.toFixed(0);
+                    if (hBar) hBar.style.width = Math.min(Math.max(nh, 0), 100) + '%';
                 }
 
-                // Update Pressure & Bar
                 if (node.pressure !== undefined) {
                     const np = parseFloat(node.pressure);
-                    const presEl = document.getElementById(`node-${rawId}-pressure`);
-                    const presBarEl = document.getElementById(`node-${rawId}-pressure-bar`);
-                    if (presEl) presEl.textContent = np.toFixed(1);
+                    const pEl = document.getElementById(`node-${rawId}-pressure`);
+                    const pBar = document.getElementById(`node-${rawId}-pressure-bar`);
+                    if (pEl) pEl.textContent = np.toFixed(1);
                     const npPercent = ((np - 960) / (1066 - 960)) * 100;
-                    if (presBarEl) presBarEl.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
+                    if (pBar) pBar.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
                 }
 
-                // Update Battery
                 if (node.battery !== undefined) {
                     document.getElementById(`node-${rawId}-battery`).textContent = parseInt(node.battery);
                 }
 
-                // Update RSSI with Colors
                 if (node.rssi !== undefined) {
                     const rssiVal = parseInt(node.rssi);
                     const rssiEl = document.getElementById(`node-${rawId}-rssi`);
@@ -327,7 +321,6 @@ async function fetchNodeData() {
                         else rssiEl.className = "text-3xl font-bold text-red-400";
                     }
                 }
-
                 document.getElementById(`node-${rawId}-updated`).textContent = 'Updated: ' + now;
             });
         }
@@ -335,13 +328,17 @@ async function fetchNodeData() {
         if (statusEl) statusEl.style.backgroundColor = '#10b981'; // Green for success
     } catch (error) {
         if (statusEl) statusEl.style.backgroundColor = '#ef4444'; // Red for error
-        console.error('Cloud Sync Error:', error);
+        console.error('Dashboard Error:', error);
     }
 }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(loadDashboard, 500);
-        });
+
+// Initialize Dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial fetch
+    fetchNodeData();
+    // Refresh every 60 seconds
+    setInterval(fetchNodeData, 60000);
+});
     </script>
     <!-- Inline Service Worker -->
     <script id="sw-registration">
