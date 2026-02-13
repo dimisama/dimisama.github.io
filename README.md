@@ -1,1 +1,391 @@
 # dimisama.github.io
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ClimatIC Dashboard</title>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0a0c10">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ClimatIC">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>">
+    <link rel="manifest" href="data:application/manifest+json,{
+        &quot;name&quot;: &quot;ClimatIC Dashboard&quot;,
+        &quot;short_name&quot;: &quot;ClimatIC&quot;,
+        &quot;description&quot;: &quot;Node Monitoring Dashboard for environmental data&quot;,
+        &quot;start_url&quot;: &quot;.&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#0a0c10&quot;,
+        &quot;theme_color&quot;: &quot;#0a0c10&quot;,
+        &quot;icons&quot;: [{
+            &quot;src&quot;: &quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>&quot;,
+            &quot;sizes&quot;: &quot;192x192&quot;,
+            &quot;type&quot;: &quot;image/svg+xml&quot;
+        }]
+    }">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0c10;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <div style="padding: 20px; text-align: center;">
+            <h1>Loading Dashboard...</h1>
+        </div>
+    </div>
+
+    <script>
+        function loadDashboard() {
+            document.getElementById('app').innerHTML = [
+                '<div class=\"relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden\">',
+                    '<header class=\"sticky top-0 z-50 flex items-center justify-between border-b border-white/5 bg-gray-900/80 backdrop-blur-md px-6 py-4 lg:px-20\">',
+                        '<div class=\"flex items-center gap-4\">',
+                            '<div class=\"bg-blue-500/20 p-2 rounded-lg text-blue-500\">',
+                                '<span class=\"material-symbols-outlined text-2xl\">thermostat</span>',
+                            '</div>',
+                            '<div class=\"flex flex-col\">',
+                                '<h1 class=\"text-xl font-bold tracking-tight text-white leading-none\">Node Monitoring Dashboard</h1>',
+                                '<div class=\"flex items-center gap-2 mt-1\">',
+                                    '<span id=\"connection-status\" class=\"h-2 w-2 rounded-full bg-blue-500\"></span>',
+                                    '<span class=\"text-[10px] uppercase tracking-widest text-gray-400 font-semibold\">Live System Status</span>',
+                                '</div>',
+                            '</div>',
+                        '</div>',
+                        '<div class=\"flex gap-2\">',
+                            '<button id=\"refresh-all-btn\" class=\"flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10\">',
+                                '<span class=\"material-symbols-outlined text-xl\">sync</span>',
+                            '</button>',
+                        '</div>',
+                    '</header>',
+                    '<main class=\"flex-1 px-6 py-10 lg:py-16 lg:px-20 max-w-[1400px] mx-auto w-full flex flex-col\">',
+                        '<div class=\"mb-12 text-center lg:text-left\">',
+                            '<h2 class=\"text-3xl font-bold tracking-tight text-white lg:text-4xl\">Node Overview</h2>',
+                            '<p class=\"text-gray-400 mt-2 text-lg\">Real-time environmental monitoring across all nodes</p>',
+                        '</div>',
+                        '<div class=\"grid grid-cols-1 lg:grid-cols-2 gap-8\">',
+                            '<div class=\"bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700\">',
+                                '<div class=\"flex items-center gap-3 mb-6 pb-4 border-b border-gray-700\">',
+                                    '<div class=\"bg-blue-500/20 p-3 rounded-lg text-blue-500\">',
+                                        '<span class=\"material-symbols-outlined text-2xl\">dns</span>',
+                                    '</div>',
+                                    '<div>',
+                                        '<h3 class=\"text-xl font-bold text-white\">Master Node</h3>',
+                                        '<p class=\"text-gray-400 text-sm\">Primary monitoring station</p>',
+                                    '</div>',
+                                '</div>',
+                                '<div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">',
+                                    '<div class=\"bg-gray-900/50 rounded-lg p-4\">',
+                                        '<div class=\"flex items-center gap-2 mb-2\">',
+                                            '<span class=\"material-symbols-outlined text-red-400\">thermostat</span>',
+                                            '<span class=\"text-sm font-semibold text-gray-300\">Temperature</span>',
+                                        '</div>',
+                                        '<div class=\"flex items-baseline gap-1\">',
+                                            '<span id=\"master-temp\" class=\"text-3xl font-bold text-white\">--</span>',
+                                            '<span class=\"text-lg text-gray-400\">°C</span>',
+                                        '</div>',
+                                    '</div>',
+                                    '<div class=\"bg-gray-900/50 rounded-lg p-4\">',
+                                        '<div class=\"flex items-center gap-2 mb-2\">',
+                                            '<span class=\"material-symbols-outlined text-blue-400\">humidity_percentage</span>',
+                                            '<span class=\"text-sm font-semibold text-gray-300\">Humidity</span>',
+                                        '</div>',
+                                        '<div class=\"flex items-baseline gap-1 mb-2\">',
+                                            '<span id=\"master-humidity\" class=\"text-3xl font-bold text-white\">--</span>',
+                                            '<span class=\"text-lg text-gray-400\">%</span>',
+                                        '</div>',
+                                        '<div class=\"w-full bg-gray-700 rounded-full h-1.5\">',
+                                            '<div id=\"master-humidity-bar\" class=\"bg-blue-500 h-1.5 rounded-full transition-all duration-500\" style=\"width: 0%\"></div>',
+                                        '</div>',
+                                    '</div>',
+                                    '<div class=\"bg-gray-900/50 rounded-lg p-4\">',
+                                        '<div class=\"flex items-center gap-2 mb-2\">',
+                                            '<span class=\"material-symbols-outlined text-purple-400\">speed</span>',
+                                            '<span class=\"text-sm font-semibold text-gray-300\">Pressure</span>',
+                                        '</div>',
+                                        '<div class=\"flex items-baseline gap-1 mb-2\">',
+                                            '<span id=\"master-pressure\" class=\"text-3xl font-bold text-white\">--</span>',
+                                            '<span class=\"text-lg text-gray-400\">hPa</span>',
+                                        '</div>',
+                                        '<div class=\"w-full bg-gray-700 rounded-full h-1.5\">',
+                                            '<div id=\"master-pressure-bar\" class=\"bg-purple-500 h-1.5 rounded-full transition-all duration-500\" style=\"width: 0%\"></div>',
+                                        '</div>',
+                                    '</div>',
+                                '</div>',
+                                '<div class=\"mt-4 pt-4 border-t border-gray-700\">',
+                                    '<p id=\"master-updated\" class=\"text-xs text-gray-500 text-right italic\">Waiting for data...</p>',
+                                '</div>',
+                            '</div>',
+                        '</div>',
+                    '</main>',
+                '</div>'
+            ].join('');
+            
+            initDashboard();
+        }
+        
+        function initDashboard() {
+            const refreshBtn = document.getElementById('refresh-all-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', fetchNodeData);
+            }
+            
+            setTimeout(fetchNodeData, 1000);
+            setInterval(fetchNodeData, 3000);
+        }
+        
+        const renderedNodes = {};
+function createNodeCard(nodeId) {
+    const container = document.querySelector(".grid.grid-cols-1.lg\\:grid-cols-2");
+    const card = document.createElement("div");
+    card.className =
+        "bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700";
+
+    card.innerHTML = `
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
+            <div class="bg-green-500/20 p-3 rounded-lg text-green-500">
+                <span class="material-symbols-outlined text-2xl">sensors</span>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white">Node ${nodeId}</h3>
+                <p class="text-gray-400 text-sm">Dynamic monitoring station</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-red-400">thermostat</span>
+                    <span class="text-sm font-semibold text-gray-300">Temperature</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="node-${nodeId}-temp" class="text-3xl font-bold text-white">--</span>
+                    <span class="text-lg text-gray-400">°C</span>
+                </div>
+            </div>
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-blue-400">humidity_percentage</span>
+                    <span class="text-sm font-semibold text-gray-300">Humidity</span>
+                </div>
+                <div class="flex items-baseline gap-1 mb-2">
+                    <span id="node-${nodeId}-humidity" class="text-3xl font-bold text-white">--</span>
+                    <span class="text-lg text-gray-400">%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-1.5">
+                    <div id="node-${nodeId}-humidity-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-purple-400">speed</span>
+                    <span class="text-sm font-semibold text-gray-300">Pressure</span>
+                </div>
+                <div class="flex items-baseline gap-1 mb-2">
+                    <span id="node-${nodeId}-pressure" class="text-3xl font-bold text-white">--</span>
+                    <span class="text-lg text-gray-400">hPa</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-1.5">
+                    <div id="node-${nodeId}-pressure-bar" class="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-green-400">battery_full</span>
+                    <span class="text-sm font-semibold text-gray-300">Battery</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="node-${nodeId}-battery" class="text-3xl font-bold text-white">--</span>
+                    <span class="text-lg text-gray-400">%</span>
+                </div>
+            </div>
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-blue-400">signal_cellular_alt</span>
+                    <span class="text-sm font-semibold text-gray-300">Signal</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="node-${nodeId}-rssi" class="text-3xl font-bold text-white">--</span>
+                    <span class="text-lg text-gray-400">dBm</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-700">
+            <p id="node-${nodeId}-updated" class="text-xs text-gray-500 text-right italic">Waiting for data...</p>
+        </div>
+    `;
+    container.appendChild(card);
+}
+        async function fetchNodeData() {
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) statusEl.style.backgroundColor = '#3b82f6';
+            
+            try {
+                const response = await fetch('/temps');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                
+                const data = await response.json();
+                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                console.log('API Response:', data);
+                
+                if (data.inside !== undefined) {
+                    document.getElementById('master-temp').textContent = parseFloat(data.inside).toFixed(1);
+                }
+                if (data.humidity !== undefined) {
+                    const h = parseFloat(data.humidity);
+                    document.getElementById('master-humidity').textContent = h.toFixed(1);
+                    document.getElementById('master-humidity-bar').style.width = Math.min(Math.max(h, 0), 100) + '%';
+                }
+                if (data.pressure !== undefined) {
+                    const p = parseFloat(data.pressure);
+                    document.getElementById('master-pressure').textContent = p.toFixed(1);
+                    const pPercent = ((p - 960) / (1066 - 960)) * 100;
+                    document.getElementById('master-pressure-bar').style.width = Math.min(Math.max(pPercent, 0), 100) + '%';
+                }
+                document.getElementById('master-updated').textContent = 'Updated: ' + now;
+                
+ if (data.nodes && data.nodes.length > 0) { 
+     data.nodes.forEach(node => {
+         const rawId = node.id; 
+         if (!renderedNodes[rawId]) { 
+             createNodeCard(rawId); 
+             renderedNodes[rawId] = true; 
+         }
+    if (node.temp !== undefined) {
+        document.getElementById(`node-${rawId}-temp`).textContent =
+            parseFloat(node.temp).toFixed(1);
+    }
+
+if (node.humidity !== undefined) {
+    const nh = parseFloat(node.humidity);
+    const humidityEl = document.getElementById(`node-${rawId}-humidity`);
+    const humidityBarEl = document.getElementById(`node-${rawId}-humidity-bar`);
+    
+    if (humidityEl) humidityEl.textContent = nh.toFixed(0);
+    if (humidityBarEl) humidityBarEl.style.width = Math.min(Math.max(nh, 0), 100) + '%';
+}
+
+if (node.pressure !== undefined) {
+    const np = parseFloat(node.pressure);
+    const pressureEl = document.getElementById(`node-${rawId}-pressure`);
+    const pressureBarEl = document.getElementById(`node-${rawId}-pressure-bar`);
+    
+    if (pressureEl) pressureEl.textContent = np.toFixed(1);
+    
+    const npPercent = ((np - 960) / (1066 - 960)) * 100;
+    if (pressureBarEl) pressureBarEl.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
+}
+
+    if (node.battery !== undefined) {
+        document.getElementById(`node-${rawId}-battery`).textContent =
+            parseInt(node.battery);
+    }
+    if (node.rssi !== undefined) {
+        const rssiVal = parseInt(node.rssi);
+        const rssiEl = document.getElementById(`node-${rawId}-rssi`);
+        rssiEl.textContent = rssiVal;
+
+        if (rssiVal > -60) rssiEl.className = "text-3xl font-bold text-green-400";
+           else if (rssiVal > -80) rssiEl.className = "text-3xl font-bold text-yellow-400";
+           else rssiEl.className = "text-3xl font-bold text-red-400";
+     }
+
+    document.getElementById(`node-${rawId}-updated`).textContent =
+        'Updated: ' + now;
+   });
+}
+                
+                if (statusEl) statusEl.style.backgroundColor = '#10b981';
+            } catch (error) {
+                if (statusEl) statusEl.style.backgroundColor = '#ef4444';
+                console.error('Dashboard Error:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadDashboard, 500);
+        });
+    </script>
+    <!-- Inline Service Worker -->
+    <script id="sw-registration">
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            
+            const swBlob = new Blob([`
+                const CACHE_NAME = 'climatic-v1';
+                const urlsToCache = [
+                    '.',
+                    'https://cdn.tailwindcss.com?plugins=forms,container-queries',
+                    'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap',
+                    'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap'
+                ];
+
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => cache.addAll(urlsToCache))
+                    );
+                });
+
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => response || fetch(event.request))
+                    );
+                });
+
+                self.addEventListener('activate', event => {
+                    event.waitUntil(
+                        caches.keys().then(cacheNames => {
+                            return Promise.all(
+                                cacheNames.filter(cacheName => {
+                                    return cacheName !== CACHE_NAME;
+                                }).map(cacheName => {
+                                    return caches.delete(cacheName);
+                                })
+                            );
+                        })
+                    );
+                });
+            `], { type: 'application/javascript' });
+            
+            const swUrl = URL.createObjectURL(swBlob);
+            navigator.serviceWorker.register(swUrl, { scope: './' }).then(function(registration) {
+                console.log('Inline ServiceWorker registered');
+            }).catch(function(error) {
+                console.log('Inline ServiceWorker registration failed:', error);
+            });
+        }
+    </script>
+</body>
+</html>
