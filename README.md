@@ -1,5 +1,3 @@
-# dimisama.github.io
-<!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
