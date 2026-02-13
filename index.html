@@ -231,13 +231,14 @@ function createNodeCard(nodeId) {
 // --- CONFIGURATION ---
 const AIO_USER = "arispaparis";
 const AIO_KEY = "aio_hzNN26SDCwNrCCubzr1E9xWl7R5q"; 
-const FEED_KEY = "all-data"; // Double check if this is "all_data" or "all-data" in Adafruit!
+const FEED_KEY = "all-data"; 
 
 async function fetchNodeData() {
     const statusEl = document.getElementById('connection-status');
+    const loaderEl = document.getElementById('loading-overlay'); // Ensure this ID matches your HTML
+    
     if (statusEl) statusEl.style.backgroundColor = '#3b82f6'; // Blue while loading
     
-    // We append /data/last to get the most recent entry
     const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}/data/last`;
 
     try {
@@ -249,7 +250,6 @@ async function fetchNodeData() {
         
         const result = await response.json();
         
-        // result.value contains the stringified JSON from your ESP32
         if (!result.value) {
             console.error("Feed is empty");
             return;
@@ -258,85 +258,88 @@ async function fetchNodeData() {
         const data = JSON.parse(result.value);
         const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         
-        console.log('Cloud Data:', data);
+        console.log('Cloud Data Received:', data);
         
+        // --- HELPER FUNCTION FOR SAFE UPDATES ---
+        const updateSafe = (id, callback) => {
+            const el = document.getElementById(id);
+            if (el) callback(el);
+        };
+
         // 1. Update Master Sensors
         if (data.inside !== undefined) {
-            document.getElementById('master-temp').textContent = parseFloat(data.inside).toFixed(1);
+            updateSafe('master-temp', el => el.textContent = parseFloat(data.inside).toFixed(1));
         }
         if (data.humidity !== undefined) {
             const h = parseFloat(data.humidity);
-            document.getElementById('master-humidity').textContent = h.toFixed(1);
-            document.getElementById('master-humidity-bar').style.width = Math.min(Math.max(h, 0), 100) + '%';
+            updateSafe('master-humidity', el => el.textContent = h.toFixed(1));
+            updateSafe('master-humidity-bar', el => el.style.width = Math.min(Math.max(h, 0), 100) + '%');
         }
         if (data.pressure !== undefined) {
             const p = parseFloat(data.pressure);
-            document.getElementById('master-pressure').textContent = p.toFixed(1);
+            updateSafe('master-pressure', el => el.textContent = p.toFixed(1));
             const pPercent = ((p - 960) / (1066 - 960)) * 100;
-            document.getElementById('master-pressure-bar').style.width = Math.min(Math.max(pPercent, 0), 100) + '%';
+            updateSafe('master-pressure-bar', el => el.style.width = Math.min(Math.max(pPercent, 0), 100) + '%');
         }
-        document.getElementById('master-updated').textContent = 'Cloud Sync: ' + now;
+        updateSafe('master-updated', el => el.textContent = 'Cloud Sync: ' + now);
 
         // 2. Update BLE Nodes
         if (data.nodes && data.nodes.length > 0) {
             data.nodes.forEach(node => {
                 const rawId = node.id;
+                
                 if (!renderedNodes[rawId]) {
-                    createNodeCard(rawId);
-                    renderedNodes[rawId] = true;
+                    if (typeof createNodeCard === "function") {
+                        createNodeCard(rawId);
+                        renderedNodes[rawId] = true;
+                    }
                 }
 
                 if (node.temp !== undefined) {
-                    document.getElementById(`node-${rawId}-temp`).textContent = parseFloat(node.temp).toFixed(1);
+                    updateSafe(`node-${rawId}-temp`, el => el.textContent = parseFloat(node.temp).toFixed(1));
                 }
 
                 if (node.humidity !== undefined) {
                     const nh = parseFloat(node.humidity);
-                    const hEl = document.getElementById(`node-${rawId}-humidity`);
-                    const hBar = document.getElementById(`node-${rawId}-humidity-bar`);
-                    if (hEl) hEl.textContent = nh.toFixed(0);
-                    if (hBar) hBar.style.width = Math.min(Math.max(nh, 0), 100) + '%';
+                    updateSafe(`node-${rawId}-humidity`, el => el.textContent = nh.toFixed(0));
+                    updateSafe(`node-${rawId}-humidity-bar`, el => el.style.width = Math.min(Math.max(nh, 0), 100) + '%');
                 }
 
                 if (node.pressure !== undefined) {
                     const np = parseFloat(node.pressure);
-                    const pEl = document.getElementById(`node-${rawId}-pressure`);
-                    const pBar = document.getElementById(`node-${rawId}-pressure-bar`);
-                    if (pEl) pEl.textContent = np.toFixed(1);
+                    updateSafe(`node-${rawId}-pressure`, el => el.textContent = np.toFixed(1));
                     const npPercent = ((np - 960) / (1066 - 960)) * 100;
-                    if (pBar) pBar.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
+                    updateSafe(`node-${rawId}-pressure-bar`, el => el.style.width = Math.min(Math.max(npPercent, 0), 100) + '%');
                 }
 
                 if (node.battery !== undefined) {
-                    document.getElementById(`node-${rawId}-battery`).textContent = parseInt(node.battery);
+                    updateSafe(`node-${rawId}-battery`, el => el.textContent = parseInt(node.battery));
                 }
 
                 if (node.rssi !== undefined) {
                     const rssiVal = parseInt(node.rssi);
-                    const rssiEl = document.getElementById(`node-${rawId}-rssi`);
-                    if (rssiEl) {
-                        rssiEl.textContent = rssiVal;
-                        if (rssiVal > -60) rssiEl.className = "text-3xl font-bold text-green-400";
-                        else if (rssiVal > -80) rssiEl.className = "text-3xl font-bold text-yellow-400";
-                        else rssiEl.className = "text-3xl font-bold text-red-400";
-                    }
+                    updateSafe(`node-${rawId}-rssi`, el => {
+                        el.textContent = rssiVal;
+                        if (rssiVal > -60) el.className = "text-3xl font-bold text-green-400";
+                        else if (rssiVal > -80) el.className = "text-3xl font-bold text-yellow-400";
+                        else el.className = "text-3xl font-bold text-red-400";
+                    });
                 }
-                document.getElementById(`node-${rawId}-updated`).textContent = 'Updated: ' + now;
+                updateSafe(`node-${rawId}-updated`, el => el.textContent = 'Updated: ' + now);
             });
         }
-        
-        if (statusEl) statusEl.style.backgroundColor = '#10b981'; // Green for success
+        if (loaderEl) loaderEl.style.display = 'none';
+        if (statusEl) statusEl.style.backgroundColor = '#10b981'; 
+
     } catch (error) {
-        if (statusEl) statusEl.style.backgroundColor = '#ef4444'; // Red for error
+        if (statusEl) statusEl.style.backgroundColor = '#ef4444';
         console.error('Dashboard Error:', error);
+        // Even on error, we might want to hide the loader so the user sees the error status
+        if (loaderEl) loaderEl.style.display = 'none';
     }
 }
-
-// Initialize Dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    // Initial fetch
     fetchNodeData();
-    // Refresh every 60 seconds
     setInterval(fetchNodeData, 60000);
 });
     </script>
