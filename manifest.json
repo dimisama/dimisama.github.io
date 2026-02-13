@@ -2,7 +2,7 @@
   "name": "ClimatIC Monitoring Dashboard",
   "short_name": "ClimatIC",
   "description": "Real-time environmental monitoring and node overview.",
-  "start_url": "./index.html",
+  "start_url": "README.md",
   "display": "standalone",
   "background_color": "#0a0c10",
   "theme_color": "#0a0c10",
@@ -21,4 +21,5 @@
       "purpose": "any maskable"
     }
   ]
+
 }
