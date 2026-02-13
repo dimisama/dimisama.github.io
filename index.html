@@ -252,7 +252,7 @@
                 };
 
                 // 1. Update Master Sensors
-                if (data.inside_DS18B20 !== undefined) {            //USING DS18B20 TEMPORARY UNTIL PCB!!!!!!!!!!!!!!!!!
+                if (data.inside_DS18B20 !== undefined) {            //USING DS18B20 TEMPORARY UNTIL PCB!!!!!!!!!!!!!!!
                     updateSafe('master-temp', el => el.textContent = parseFloat(data.inside_DS18B20).toFixed(1));
                 }
                 if (data.humidity !== undefined) {
