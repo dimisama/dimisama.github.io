@@ -1,7 +1,7 @@
 {
   "name": "ClimatIC Dashboard",
   "short_name": "ClimatIC",
-  "start_url": "./index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0a0c10",
   "theme_color": "#0a0c10",
@@ -18,3 +18,4 @@
     }
   ]
 }
+
