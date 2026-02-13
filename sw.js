@@ -1,13 +1,24 @@
-const cacheName = 'v1';
-const assetsToCache = ['README.md', './style.css']; // Add your filenames here
+const cacheName = 'climatic-v1';
+const staticAssets = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(assetsToCache)));
+self.addEventListener('install', async (event) => {
+  const cache = await caches.open(cacheName);
+  await cache.addAll(staticAssets);
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
-  );
-
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  event.respondWith(cacheFirst(req));
 });
+
+async function cacheFirst(req) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  return cached || fetch(req);
+}
