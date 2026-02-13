@@ -234,22 +234,31 @@ const FEED_KEY = "all_data";
 
 async function fetchNodeData() {
     const statusEl = document.getElementById('connection-status');
-    if (statusEl) statusEl.style.backgroundColor = '#3b82f6'; // Blue for "working"
-    
+    // Note the /data/last at the end
     const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}/data/last`;
 
     try {
         const response = await fetch(url, {
             headers: { 'X-AIO-Key': AIO_KEY }
         });
-        if (!response.ok) throw new Error('Cloud Access Denied');
+
+        if (!response.ok) {
+            console.error("HTTP Error:", response.status);
+            throw new Error('Cloud Access Denied');
+        }
+
+        const result = await response.json();
         
-        const rawData = await response.json();
-        // This is the magic part: Parse the string stored in Adafruit
-        const data = JSON.parse(rawData.last_value);
-        
-        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        console.log('Cloud Data Received:', data);
+        // IMPORTANT: Adafruit uses "value" for the payload in the /data/last endpoint
+        if (!result.value) {
+            console.error("No data found in feed");
+            return;
+        }
+
+        const data = JSON.parse(result.value);
+        console.log("Success! Decoded Data:", data);
+
+        // ... rest of your UI update logic ...
 
         // --- 1. UPDATE MASTER SENSORS ---
         if (data.inside !== undefined) {
