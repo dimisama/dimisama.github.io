@@ -228,92 +228,107 @@ function createNodeCard(nodeId) {
     `;
     container.appendChild(card);
 }
-        async function fetchNodeData() {
-            const statusEl = document.getElementById('connection-status');
-            if (statusEl) statusEl.style.backgroundColor = '#3b82f6';
-            
-            try {
-                const response = await fetch('/temps');
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                
-                const data = await response.json();
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                console.log('API Response:', data);
-                
-                if (data.inside !== undefined) {
-                    document.getElementById('master-temp').textContent = parseFloat(data.inside).toFixed(1);
-                }
-                if (data.humidity !== undefined) {
-                    const h = parseFloat(data.humidity);
-                    document.getElementById('master-humidity').textContent = h.toFixed(1);
-                    document.getElementById('master-humidity-bar').style.width = Math.min(Math.max(h, 0), 100) + '%';
-                }
-                if (data.pressure !== undefined) {
-                    const p = parseFloat(data.pressure);
-                    document.getElementById('master-pressure').textContent = p.toFixed(1);
-                    const pPercent = ((p - 960) / (1066 - 960)) * 100;
-                    document.getElementById('master-pressure-bar').style.width = Math.min(Math.max(pPercent, 0), 100) + '%';
-                }
-                document.getElementById('master-updated').textContent = 'Updated: ' + now;
-                
- if (data.nodes && data.nodes.length > 0) { 
-     data.nodes.forEach(node => {
-         const rawId = node.id; 
-         if (!renderedNodes[rawId]) { 
-             createNodeCard(rawId); 
-             renderedNodes[rawId] = true; 
-         }
-    if (node.temp !== undefined) {
-        document.getElementById(`node-${rawId}-temp`).textContent =
-            parseFloat(node.temp).toFixed(1);
-    }
+const AIO_USER = "arispaparis";
+const AIO_KEY = "aio_hzNN26SDCwNrCCubzr1E9xWl7R5q"; 
+const FEED_KEY = "all_data"; 
 
-if (node.humidity !== undefined) {
-    const nh = parseFloat(node.humidity);
-    const humidityEl = document.getElementById(`node-${rawId}-humidity`);
-    const humidityBarEl = document.getElementById(`node-${rawId}-humidity-bar`);
+async function fetchNodeData() {
+    const statusEl = document.getElementById('connection-status');
+    if (statusEl) statusEl.style.backgroundColor = '#3b82f6'; // Blue for "working"
     
-    if (humidityEl) humidityEl.textContent = nh.toFixed(0);
-    if (humidityBarEl) humidityBarEl.style.width = Math.min(Math.max(nh, 0), 100) + '%';
-}
+    const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}`;
 
-if (node.pressure !== undefined) {
-    const np = parseFloat(node.pressure);
-    const pressureEl = document.getElementById(`node-${rawId}-pressure`);
-    const pressureBarEl = document.getElementById(`node-${rawId}-pressure-bar`);
-    
-    if (pressureEl) pressureEl.textContent = np.toFixed(1);
-    
-    const npPercent = ((np - 960) / (1066 - 960)) * 100;
-    if (pressureBarEl) pressureBarEl.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
-}
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-AIO-Key': AIO_KEY }
+        });
+        if (!response.ok) throw new Error('Cloud Access Denied');
+        
+        const rawData = await response.json();
+        // This is the magic part: Parse the string stored in Adafruit
+        const data = JSON.parse(rawData.last_value);
+        
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        console.log('Cloud Data Received:', data);
 
-    if (node.battery !== undefined) {
-        document.getElementById(`node-${rawId}-battery`).textContent =
-            parseInt(node.battery);
-    }
-    if (node.rssi !== undefined) {
-        const rssiVal = parseInt(node.rssi);
-        const rssiEl = document.getElementById(`node-${rawId}-rssi`);
-        rssiEl.textContent = rssiVal;
-
-        if (rssiVal > -60) rssiEl.className = "text-3xl font-bold text-green-400";
-           else if (rssiVal > -80) rssiEl.className = "text-3xl font-bold text-yellow-400";
-           else rssiEl.className = "text-3xl font-bold text-red-400";
-     }
-
-    document.getElementById(`node-${rawId}-updated`).textContent =
-        'Updated: ' + now;
-   });
-}
-                
-                if (statusEl) statusEl.style.backgroundColor = '#10b981';
-            } catch (error) {
-                if (statusEl) statusEl.style.backgroundColor = '#ef4444';
-                console.error('Dashboard Error:', error);
-            }
+        // --- 1. UPDATE MASTER SENSORS ---
+        if (data.inside !== undefined) {
+            document.getElementById('master-temp').textContent = parseFloat(data.inside).toFixed(1);
         }
+        if (data.humidity !== undefined) {
+            const h = parseFloat(data.humidity);
+            document.getElementById('master-humidity').textContent = h.toFixed(1);
+            document.getElementById('master-humidity-bar').style.width = Math.min(Math.max(h, 0), 100) + '%';
+        }
+        if (data.pressure !== undefined) {
+            const p = parseFloat(data.pressure);
+            document.getElementById('master-pressure').textContent = p.toFixed(1);
+            const pPercent = ((p - 960) / (1066 - 960)) * 100;
+            document.getElementById('master-pressure-bar').style.width = Math.min(Math.max(pPercent, 0), 100) + '%';
+        }
+        document.getElementById('master-updated').textContent = 'Cloud Sync: ' + now;
+
+        // --- 2. UPDATE BLE NODES ---
+        if (data.nodes && data.nodes.length > 0) { 
+            data.nodes.forEach(node => {
+                const rawId = node.id; 
+                // Check if card exists, if not, create it
+                if (!renderedNodes[rawId]) { 
+                    createNodeCard(rawId); 
+                    renderedNodes[rawId] = true; 
+                }
+
+                // Update Temp
+                if (node.temp !== undefined) {
+                    document.getElementById(`node-${rawId}-temp`).textContent = parseFloat(node.temp).toFixed(1);
+                }
+
+                // Update Humidity & Bar
+                if (node.humidity !== undefined) {
+                    const nh = parseFloat(node.humidity);
+                    const humEl = document.getElementById(`node-${rawId}-humidity`);
+                    const humBarEl = document.getElementById(`node-${rawId}-humidity-bar`);
+                    if (humEl) humEl.textContent = nh.toFixed(0);
+                    if (humBarEl) humBarEl.style.width = Math.min(Math.max(nh, 0), 100) + '%';
+                }
+
+                // Update Pressure & Bar
+                if (node.pressure !== undefined) {
+                    const np = parseFloat(node.pressure);
+                    const presEl = document.getElementById(`node-${rawId}-pressure`);
+                    const presBarEl = document.getElementById(`node-${rawId}-pressure-bar`);
+                    if (presEl) presEl.textContent = np.toFixed(1);
+                    const npPercent = ((np - 960) / (1066 - 960)) * 100;
+                    if (presBarEl) presBarEl.style.width = Math.min(Math.max(npPercent, 0), 100) + '%';
+                }
+
+                // Update Battery
+                if (node.battery !== undefined) {
+                    document.getElementById(`node-${rawId}-battery`).textContent = parseInt(node.battery);
+                }
+
+                // Update RSSI with Colors
+                if (node.rssi !== undefined) {
+                    const rssiVal = parseInt(node.rssi);
+                    const rssiEl = document.getElementById(`node-${rawId}-rssi`);
+                    if (rssiEl) {
+                        rssiEl.textContent = rssiVal;
+                        if (rssiVal > -60) rssiEl.className = "text-3xl font-bold text-green-400";
+                        else if (rssiVal > -80) rssiEl.className = "text-3xl font-bold text-yellow-400";
+                        else rssiEl.className = "text-3xl font-bold text-red-400";
+                    }
+                }
+
+                document.getElementById(`node-${rawId}-updated`).textContent = 'Updated: ' + now;
+            });
+        }
+        
+        if (statusEl) statusEl.style.backgroundColor = '#10b981'; // Green for success
+    } catch (error) {
+        if (statusEl) statusEl.style.backgroundColor = '#ef4444'; // Red for error
+        console.error('Cloud Sync Error:', error);
+    }
+}
         
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(loadDashboard, 500);
