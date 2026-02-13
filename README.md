@@ -2,28 +2,11 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    
     <title>ClimatIC Dashboard</title>
-    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0c10">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ClimatIC">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>">
-    <link rel="manifest" href="data:application/manifest+json,{
-        &quot;name&quot;: &quot;ClimatIC Dashboard&quot;,
-        &quot;short_name&quot;: &quot;ClimatIC&quot;,
-        &quot;description&quot;: &quot;Node Monitoring Dashboard for environmental data&quot;,
-        &quot;start_url&quot;: &quot;.&quot;,
-        &quot;display&quot;: &quot;standalone&quot;,
-        &quot;background_color&quot;: &quot;#0a0c10&quot;,
-        &quot;theme_color&quot;: &quot;#0a0c10&quot;,
-        &quot;icons&quot;: [{
-            &quot;src&quot;: &quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a0c10' stroke='%233b82f6' stroke-width='5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%233b82f6' font-family='Arial'>🌡️</text></svg>&quot;,
-            &quot;sizes&quot;: &quot;192x192&quot;,
-            &quot;type&quot;: &quot;image/svg+xml&quot;
-        }]
-    }">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         body {
             margin: 0;
@@ -39,7 +22,13 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-    <!-- Service Worker Registration -->
+</head>
+<body>
+    <div id="app">
+        <div style="padding: 20px; text-align: center;">
+            <h1>Loading Dashboard...</h1>
+        </div>
+    </div>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
@@ -384,6 +373,15 @@ if (node.pressure !== undefined) {
                 console.log('Inline ServiceWorker registration failed:', error);
             });
         }
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered!', reg))
+            .catch(err => console.log('Service Worker Failed:', err));
+        });
+      }
     </script>
 </body>
 </html>
