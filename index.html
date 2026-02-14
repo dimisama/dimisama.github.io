@@ -223,7 +223,7 @@
             const statusEl = document.getElementById('connection-status');
             if (statusEl) statusEl.style.backgroundColor = '#3b82f6'; // Blue while loading
             
-            const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}/data/last`;
+            const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}`;
 
             try {
                 const response = await fetch(url);
@@ -232,12 +232,12 @@
                 
                 const result = await response.json();
                 
-                if (!result.value) {
+                if (!result.last_value) {
                     console.error("Feed is empty");
                     return;
                 }
 
-                const data = JSON.parse(result.value);
+                const data = JSON.parse(result.last_value);
                 const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 
                 console.log('Cloud Data Received:', data);
