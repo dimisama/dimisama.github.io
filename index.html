@@ -34,7 +34,7 @@
     <script>
         // --- CONFIGURATION --
         const AIO_USER = "arispaparis";
-        const AIO_KEY = "aio_ycMC32CS4BOXlzLyAP1II2Tmvr3t"; 
+        const AIO_KEY = "aio_kzAv71iyVBqxP4LCsGVcYfA7pbyM"; 
         const FEED_KEY = "all-data"; 
 
         function loadDashboard() {
@@ -228,7 +228,7 @@
 
             try {
                 const response = await fetch(url, {
-                    headers: { 'X-AIO-Key': aio_ycMC32CS4BOXlzLyAP1II2Tmvr3t }
+                    headers: { 'X-AIO-Key': AIO_KEY }
                 });
 
                 if (!response.ok) throw new Error('HTTP ' + response.status);
