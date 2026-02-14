@@ -34,7 +34,7 @@
     <script>
         // --- CONFIGURATION --
         const AIO_USER = "arispaparis";
-        const AIO_KEY = "aio_kzAv71iyVBqxP4LCsGVcYfA7pbyM"; 
+        //const AIO_KEY = "aio_kzAv71iyVBqxP4LCsGVcYfA7pbyM"; 
         const FEED_KEY = "all-data"; 
 
         function loadDashboard() {
@@ -227,9 +227,9 @@
             const url = `https://io.adafruit.com/api/v2/${AIO_USER}/feeds/${FEED_KEY}/data/last`;
 
             try {
-                const response = await fetch(url, {
-                    headers: { 'X-AIO-Key': AIO_KEY }
-                });
+                //const response = await fetch(url, { headers: { 'X-AIO-Key': AIO_KEY }
+                const response = await fetch(url
+                );
 
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 
